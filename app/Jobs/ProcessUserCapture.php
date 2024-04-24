@@ -14,7 +14,7 @@ class ProcessUserCapture implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(private string $email, private string $passwordHash)
+    public function __construct(public string $email, public string $passwordHash)
     {
     }
 

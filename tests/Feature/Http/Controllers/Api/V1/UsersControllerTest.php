@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Http\Controllers\Api\V1;
 
+use App\Events\UserCapture;
 use App\Jobs\ProcessUserCapture;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -13,7 +15,7 @@ class UsersControllerTest extends TestCase
 
     public function test_store_user(): void
     {
-        Queue::fake();
+        Event::fake();
 
         $email = 'acme@qwerty.xyz';
         $password = 'secret12345678';
@@ -25,12 +27,6 @@ class UsersControllerTest extends TestCase
 
         $response->assertStatus(200);
 
-        Queue::assertPushed(ProcessUserCapture::class, 1);
-        $jobs = collect(Queue::pushedJobs());
-        $jobs->flatten()->first()->handle();
-
-        $this->assertDatabaseHas('users', [
-            'email' => $email,
-        ]);
+        Event::assertDispatched(UserCapture::class, 1);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Jobs\ProcessUserCapture;
+use App\Events\UserCapture;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,7 +26,10 @@ class UsersController
         $email = $request->input('email');
         $password = Hash::make($request->input('password'));
 
-        ProcessUserCapture::dispatch($email, $password);
+        event(new UserCapture(
+            $email,
+            $password,
+        ));
 
         return new JsonResponse([
             'message' => 'Ok',
