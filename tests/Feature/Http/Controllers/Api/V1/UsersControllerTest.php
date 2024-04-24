@@ -2,11 +2,9 @@
 
 namespace Tests\Feature\Http\Controllers\Api\V1;
 
-use App\Events\UserCapture;
-use App\Jobs\ProcessUserCapture;
+use App\Events\UserCaptured;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class UsersControllerTest extends TestCase
@@ -18,13 +16,20 @@ class UsersControllerTest extends TestCase
         Event::fake();
 
         $email = 'acme@qwerty.xyz';
+        $password = 'secret12345678';
 
         $response = $this->post('/api/users', [
             'email' => $email,
+            'password' => $password,
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(201);
 
-        Event::assertDispatched(UserCapture::class, 1);
+        Event::assertDispatched(UserCaptured::class, 1);
+
+        $this->assertDatabaseHas('users', [
+            'email' => $email,
+            'name' => null,
+        ]);
     }
 }

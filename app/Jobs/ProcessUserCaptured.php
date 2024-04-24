@@ -3,35 +3,32 @@
 namespace App\Jobs;
 
 use App\Models\User;
+use Faker\Generator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
-class ProcessUserCapture implements ShouldQueue
+class ProcessUserCaptured implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public string $email)
+    public function __construct(public string $userId)
     {
     }
 
-    public function handle(): void
+    public function handle(Generator $faker): void
     {
-        $password = Hash::make(Str::password(16));
-        $user = User::create([
-            'email' => $this->email,
-            'password' => $password,
-        ]);
+        $user = User::findOrFail($this->userId);
+        $user->name = $faker->name();
+        $user->save();
 
         Log::info([
             'message' => sprintf('"%s" job has been handled', self::class),
             'queue' => $this->queue,
-            'user_id' => $user->id,
+            'user_id' => $this->userId,
         ]);
     }
 }
