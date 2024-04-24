@@ -17,7 +17,7 @@ docker compose run --user $(id -u):$(id -g) worker php artisan make:job AcmeJob
 ## Creating a user
 ```bash
 curl -H 'Content-Type: application/json' \
-    -d '{ "email":"john.doe@example.com","password":"secret12345678"}' \
+    -d '{ "email":"john.doe@example.com"}' \
     -X POST \
     http://localhost/api/users
 ```
