@@ -15,10 +15,9 @@ class UserCaptureListenerTest extends TestCase
         Queue::fake();
 
         $email = 'acme@qwerty.xyz';
-        $passwordHash = 'secret12345678';
 
         (new UserCaptureListener())->handle(
-            new UserCapture($email, $passwordHash)
+            new UserCapture($email)
         );
 
         Queue::assertPushed(ProcessUserCapture::class, 1);
@@ -27,6 +26,5 @@ class UserCaptureListenerTest extends TestCase
         $job = $jobs->flatten()->first();
 
         self::assertEquals($email, $job->email);
-        self::assertEquals($passwordHash, $job->passwordHash);
     }
 }

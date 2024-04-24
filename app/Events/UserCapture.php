@@ -10,7 +10,7 @@ class UserCapture
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public string $email, public string $passwordHash)
+    public function __construct(public string $email)
     {
     }
 }

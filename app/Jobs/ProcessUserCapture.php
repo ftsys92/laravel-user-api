@@ -8,21 +8,24 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ProcessUserCapture implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public string $email, public string $passwordHash)
+    public function __construct(public string $email)
     {
     }
 
     public function handle(): void
     {
+        $password = Hash::make(Str::password(16));
         $user = User::create([
             'email' => $this->email,
-            'password' => $this->passwordHash,
+            'password' => $password,
         ]);
 
         Log::info([

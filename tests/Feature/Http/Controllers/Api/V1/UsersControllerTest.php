@@ -18,11 +18,9 @@ class UsersControllerTest extends TestCase
         Event::fake();
 
         $email = 'acme@qwerty.xyz';
-        $password = 'secret12345678';
 
         $response = $this->post('/api/users', [
             'email' => $email,
-            'password' => $password,
         ]);
 
         $response->assertStatus(200);

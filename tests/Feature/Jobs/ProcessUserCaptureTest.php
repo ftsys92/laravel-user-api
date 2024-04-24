@@ -14,13 +14,11 @@ class ProcessUserCaptureTest extends TestCase
     public function test_creates_user(): void
     {
         $email = 'acme@qwerty.xyz';
-        $passwordHash = Hash::make('secret12345678');
 
-        (new ProcessUserCapture($email, $passwordHash))->handle();
+        (new ProcessUserCapture($email))->handle();
 
         $this->assertDatabaseHas('users', [
             'email' => $email,
-            'password' => $passwordHash,
         ]);
     }
 }

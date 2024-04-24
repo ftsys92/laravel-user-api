@@ -15,7 +15,6 @@ class UserCaptureListener
     {
         ProcessUserCapture::dispatch(
             $event->email,
-            $event->passwordHash,
         );
     }
 }
