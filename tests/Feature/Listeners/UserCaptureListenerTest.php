@@ -10,7 +10,7 @@ use Tests\TestCase;
 
 class UserCaptureListenerTest extends TestCase
 {
-    public function test_dispatches_pricess_user_capture_job(): void
+    public function test_dispatches_process_user_capture_job(): void
     {
         Queue::fake();
 
