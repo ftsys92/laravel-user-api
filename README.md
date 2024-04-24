@@ -1,4 +1,4 @@
-# Laravel User Api - Serverless Test Case
+# Laravel User Api - Serverless Test Case with RDS + SQS
 
 ## Local development
 ```bash

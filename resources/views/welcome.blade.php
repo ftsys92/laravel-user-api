@@ -916,7 +916,7 @@
                 </header>
 
                 <main class="grid grid-cols-3 items-center gap-2 py-10">
-                    <h2 class="text-xl text-center font-bold text-black dark:text-white">Serverless Test Case + RDS</h2>
+                    <h2 class="text-xl text-center font-bold text-black dark:text-white">Serverless Test Case + RDS + SQS</h2>
                     <h3 class="text-lg text-center font-semibold text-black dark:text-white">{{ App\Models\User::inRandomOrder()->first()->email ?? 'No users' }}</h3>
                 </main>
 
