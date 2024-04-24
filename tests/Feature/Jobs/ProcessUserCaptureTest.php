@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Feature\Jobs;
 
 use App\Jobs\ProcessUserCapture;
 use Illuminate\Foundation\Testing\RefreshDatabase;
