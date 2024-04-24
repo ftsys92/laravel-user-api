@@ -7,8 +7,9 @@ make up
 make migrate
 ```
 
-## Running artisan commands
+## Running commands in container
 ```bash
+docker compose run --user $(id -u):$(id -g) worker composer require package
 docker compose run --user $(id -u):$(id -g) worker php artisan cache:clear
 docker compose run --user $(id -u):$(id -g) worker php artisan make:job AcmeJob
 ```
