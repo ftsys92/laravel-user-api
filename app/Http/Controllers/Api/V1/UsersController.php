@@ -50,7 +50,7 @@ class UsersController
 
     public function delete(User $user): JsonResponse
     {
-        $user->delete();
+       $user->delete();
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
