@@ -1,0 +1,209 @@
+service: laravel-user-api
+
+provider:
+    name: aws
+    region: us-east-1
+    stage: 'sandbox'
+    environment:
+        APP_ENV: ${sls:stage}
+        APP_KEY: ${ssm:/sandbox/laravel-user-api/app-key}
+        SESSION_DRIVER: cookie
+        DB_CONNECTION: mysql
+        DB_HOST: !GetAtt MySqlRDSInstance.Endpoint.Address
+        DB_PORT: !GetAtt MySqlRDSInstance.Endpoint.Port
+        DB_USERNAME: ${ssm:/sandbox/laravel-user-api/db-username}
+        DB_PASSWORD: ${ssm:/sandbox/laravel-user-api/db-password}
+        DB_DATABASE: ${ssm:/sandbox/laravel-user-api/db-name}
+        QUEUE_CONNECTION: sqs
+        SQS_QUEUE: ${construct:jobs.queueUrl}
+
+    iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "rds:*"
+      Resource:
+        - "Fn::Sub": "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${ssm:/sandbox/laravel-user-api/db-name}"
+
+package:
+    patterns:
+        - '!node_modules/**'
+        - '!public/storage'
+        - '!resources/assets/**'
+        - '!storage/**'
+        - '!tests/**'
+        - '!.env'
+
+functions:
+    web:
+        handler: public/index.php
+        runtime: php-82-fpm
+        timeout: 28
+        events:
+            - httpApi: '*'
+
+    artisan:
+        handler: artisan
+        runtime: php-82-console
+        timeout: 720 # in seconds
+        # Uncomment to also run the scheduler every minute
+        #events:
+        #    - schedule:
+        #          rate: rate(1 minute)
+        #          input: '"schedule:run"'
+
+resources:
+  Resources:
+    ServerlessInternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+          -
+            Key: "Name"
+            Value: "ServerlessInternetGateway"
+    ServerlessVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 10.0.0.0/16
+        EnableDnsSupport: true
+        EnableDnsHostnames: true
+        InstanceTenancy: default
+        Tags:
+          -
+            Key: "Name"
+            Value: "ServerlessVPC"
+    ServerlessVPCGA:
+      Type: AWS::EC2::VPCGatewayAttachment
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        InternetGatewayId:
+          Ref: ServerlessInternetGateway
+    ServerlessSubnetA:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: 10.0.0.0/24
+        Tags:
+          -
+            Key: "Name"
+            Value: "ServerlessSubnetA"
+    ServerlessSubnetB:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: 10.0.1.0/24
+        Tags:
+          -
+            Key: "Name"
+            Value: "ServerlessSubnetB"
+    ServerlessSubnetC:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}c
+        CidrBlock: 10.0.2.0/24
+        Tags:
+          -
+            Key: "Name"
+            Value: "ServerlessSubnetC"
+    ServerlessSubnetGroup:
+      Type: AWS::RDS::DBSubnetGroup
+      Properties:
+        DBSubnetGroupDescription: "RDS Subnet Group"
+        SubnetIds:
+          - Ref: ServerlessSubnetA
+          - Ref: ServerlessSubnetB
+          - Ref: ServerlessSubnetC
+        Tags:
+          -
+            Key: "Name"
+            Value: "ServerlessSubnetGroup"
+    ServerlessSecurityGroup:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: SecurityGroup for Serverless Functions
+        VpcId:
+          Ref: ServerlessVPC
+        SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: '0'
+            ToPort: '65535'
+            CidrIp: "0.0.0.0/0"
+        Tags:
+          -
+            Key: "Name"
+            Value: "ServerlessSecurityGroup"
+    RouteTablePublic:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        Tags:
+          - Key: Name
+            Value: public-route
+    RoutePublic:
+      Type: AWS::EC2::Route
+      Properties:
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId:
+          Ref: ServerlessInternetGateway
+        RouteTableId:
+          Ref: RouteTablePublic
+    RouteTableAssociationSubnetA:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: RouteTablePublic
+        SubnetId:
+          Ref: ServerlessSubnetA
+    RouteTableAssociationSubnetB:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: RouteTablePublic
+        SubnetId:
+          Ref: ServerlessSubnetB
+    RouteTableAssociationSubnetC:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: RouteTablePublic
+        SubnetId:
+          Ref: ServerlessSubnetC
+    MySqlRDSInstance:
+      DependsOn: ServerlessVPCGA
+      Type: AWS::RDS::DBInstance
+      Properties:
+        MasterUsername: ${ssm:/sandbox/laravel-user-api/db-username}
+        MasterUserPassword: ${ssm:/sandbox/laravel-user-api/db-password}
+        AllocatedStorage: 20
+        DBName: ${ssm:/sandbox/laravel-user-api/db-name}
+        DBInstanceClass: db.t3.micro
+        VPCSecurityGroups:
+        - !GetAtt ServerlessSecurityGroup.GroupId
+        DBSubnetGroupName:
+          Ref: ServerlessSubnetGroup
+        Engine: mysql
+        PubliclyAccessible: true
+
+constructs:
+    jobs:
+        type: queue
+        worker:
+            handler: Bref\LaravelBridge\Queue\QueueHandler
+            runtime: php-82
+            timeout: 60 # seconds
+
+plugins:
+    # We need to include the Bref plugin
+    - ./vendor/bref/bref
+    - serverless-lift
